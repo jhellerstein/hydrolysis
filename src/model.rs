@@ -100,32 +100,34 @@ impl Node {
     /// Prefers user code over framework code (filters out hydro_lang internals).
     pub fn extract_source_location(&self) -> Option<SourceLocation> {
         let backtrace = self.data.as_ref()?.backtrace.as_array()?;
-        
+
         // First try to find user code (not in hydro_lang or std)
         for frame in backtrace {
             if let Some(file) = frame.get("file").and_then(|f| f.as_str()) {
                 // Skip framework internals
-                if file.contains("hydro_lang") 
-                    || file.contains("dfir_") 
+                if file.contains("hydro_lang")
+                    || file.contains("dfir_")
                     || file.contains("stageleft")
-                    || file.starts_with("src/") && (
-                        file.contains("location/") 
-                        || file.contains("compile/")
-                        || file.contains("live_collections/")
-                    ) {
+                    || file.starts_with("src/")
+                        && (file.contains("location/")
+                            || file.contains("compile/")
+                            || file.contains("live_collections/"))
+                {
                     continue;
                 }
-                
-                let line = frame.get("line")
+
+                let line = frame
+                    .get("line")
                     .or_else(|| frame.get("lineNumber"))
                     .and_then(|l| l.as_u64())
                     .map(|l| l as u32)?;
-                
-                let function = frame.get("function")
+
+                let function = frame
+                    .get("function")
                     .or_else(|| frame.get("fn"))
                     .and_then(|f| f.as_str())
                     .map(|s| s.to_string());
-                
+
                 return Some(SourceLocation {
                     file: file.to_string(),
                     line,
@@ -133,19 +135,21 @@ impl Node {
                 });
             }
         }
-        
+
         // Fallback: use the first frame if no user code found
         let frame = backtrace.first()?;
         let file = frame.get("file").and_then(|f| f.as_str())?.to_string();
-        let line = frame.get("line")
+        let line = frame
+            .get("line")
             .or_else(|| frame.get("lineNumber"))
             .and_then(|l| l.as_u64())
             .map(|l| l as u32)?;
-        let function = frame.get("function")
+        let function = frame
+            .get("function")
             .or_else(|| frame.get("fn"))
             .and_then(|f| f.as_str())
             .map(|s| s.to_string());
-        
+
         Some(SourceLocation {
             file,
             line,
@@ -326,14 +330,16 @@ pub mod tests {
             )),
             prop::option::of(prop::string::string_regex("[A-Za-z<>:, ]+").unwrap()),
         )
-            .prop_map(|(id, source, target, edge_properties, semantic_tags, label)| Edge {
-                id,
-                source,
-                target,
-                edge_properties,
-                semantic_tags,
-                label,
-            })
+            .prop_map(
+                |(id, source, target, edge_properties, semantic_tags, label)| Edge {
+                    id,
+                    source,
+                    target,
+                    edge_properties,
+                    semantic_tags,
+                    label,
+                },
+            )
     }
 
     // Strategy for generating valid HydroIr
@@ -341,7 +347,9 @@ pub mod tests {
         (
             prop::collection::vec(arb_node(), 1..10),
             prop::collection::vec(arb_edge(), 0..15),
-            prop::option::of(Just(serde_json::json!([{"id": "location", "name": "Location"}]))),
+            prop::option::of(Just(
+                serde_json::json!([{"id": "location", "name": "Location"}]),
+            )),
             prop::option::of(Just(serde_json::json!({"location": {"0": "loc_0"}}))),
             prop::option::of(Just("location".to_string())),
             prop::option::of(Just(serde_json::json!({"default": "solid"}))),

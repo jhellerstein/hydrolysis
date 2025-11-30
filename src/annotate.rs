@@ -6,22 +6,22 @@ use anyhow::Result;
 
 /// Merge analysis results into the original IR structure
 pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
-    use crate::semantics::{get_node_semantics, NdEffect};
-    
+    use crate::semantics::{NdEffect, get_node_semantics};
+
     // Convert nodes to annotated nodes with semantic tags
     let annotated_nodes: Vec<AnnotatedNode> = ir
         .nodes
         .iter()
         .map(|node| {
             let analysis = results.node_analyses.get(&node.id);
-            
+
             // Keep original node type but add semantic tags for styling
             let mut semantic_tags = vec![node.node_type.clone()];
-            
+
             if let Some(analysis) = analysis {
                 let semantics = get_node_semantics(node);
                 let is_root_cause = semantics.nd != NdEffect::Deterministic;
-                
+
                 if is_root_cause {
                     // This node is a root cause of nondeterminism
                     semantic_tags.push("NonDetRoot".to_string());
@@ -32,7 +32,7 @@ pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
                     // Deterministic node
                     semantic_tags.push("Deterministic".to_string());
                 }
-                
+
                 // Add monotonicity tag
                 if analysis.monotone {
                     semantic_tags.push("Monotone".to_string());
@@ -40,7 +40,7 @@ pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
                     semantic_tags.push("NonMonotone".to_string());
                 }
             }
-            
+
             AnnotatedNode {
                 id: node.id.clone(),
                 node_type: node.node_type.clone(),
@@ -60,10 +60,10 @@ pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
         .iter()
         .map(|edge| {
             let analysis = results.edge_analyses.get(&edge.id);
-            
+
             // Add analysis-based semantic tags
             let mut enhanced_tags = edge.semantic_tags.clone().unwrap_or_default();
-            
+
             if let Some(analysis) = analysis {
                 // Add lattice/non-lattice tag
                 if analysis.is_lattice {
@@ -71,11 +71,11 @@ pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
                 } else {
                     enhanced_tags.push("NonLattice".to_string());
                 }
-                
+
                 // Add CALM status tag
                 enhanced_tags.push(analysis.calm.clone());
             }
-            
+
             AnnotatedEdge {
                 id: edge.id.clone(),
                 source: edge.source.clone(),
@@ -91,7 +91,7 @@ pub fn annotate(ir: &HydroIr, results: &AnalysisResult) -> AnnotatedHydroIr {
     // Create enhanced configs for visualization
     let enhanced_node_config = create_enhanced_node_config(ir.node_type_config.as_ref());
     let enhanced_edge_config = create_enhanced_edge_config(ir.edge_style_config.as_ref());
-    
+
     // Create annotated IR with enhanced configs
     AnnotatedHydroIr {
         nodes: annotated_nodes,
@@ -115,10 +115,10 @@ fn create_enhanced_node_config(original: Option<&serde_json::Value>) -> serde_js
             "semanticMappings": {}
         })
     });
-    
+
     // Don't override node type colors - let Hydroscope handle that based on nodeType
     // We only add semantic mappings for analysis-specific styling
-    
+
     // Add analysis-specific semantic mappings for node styling
     let analysis_mappings = serde_json::json!({
         "NondeterminismGroup": {
@@ -143,27 +143,30 @@ fn create_enhanced_node_config(original: Option<&serde_json::Value>) -> serde_js
             }
         }
     });
-    
-    if let Some(mappings) = config.get_mut("semanticMappings").and_then(|m| m.as_object_mut()) {
+
+    if let Some(mappings) = config
+        .get_mut("semanticMappings")
+        .and_then(|m| m.as_object_mut())
+    {
         for (key, value) in analysis_mappings.as_object().unwrap() {
             mappings.insert(key.clone(), value.clone());
         }
     } else {
-        config.as_object_mut().unwrap().insert(
-            "semanticMappings".to_string(),
-            analysis_mappings
-        );
+        config
+            .as_object_mut()
+            .unwrap()
+            .insert("semanticMappings".to_string(), analysis_mappings);
     }
-    
+
     config
 }
 
 /// Create enhanced edge style config with analysis-specific semantic mappings
 fn create_enhanced_edge_config(original: Option<&serde_json::Value>) -> serde_json::Value {
-    let mut config = original.cloned().unwrap_or_else(|| {
-        serde_json::json!({"semanticMappings": {}})
-    });
-    
+    let mut config = original
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!({"semanticMappings": {}}));
+
     // Add analysis-specific semantic mappings with distinct visual styles
     let analysis_mappings = serde_json::json!({
         "LatticeGroup": {
@@ -185,13 +188,16 @@ fn create_enhanced_edge_config(original: Option<&serde_json::Value>) -> serde_js
             }
         }
     });
-    
-    if let Some(mappings) = config.get_mut("semanticMappings").and_then(|m| m.as_object_mut()) {
+
+    if let Some(mappings) = config
+        .get_mut("semanticMappings")
+        .and_then(|m| m.as_object_mut())
+    {
         for (key, value) in analysis_mappings.as_object().unwrap() {
             mappings.insert(key.clone(), value.clone());
         }
     }
-    
+
     config
 }
 
@@ -215,7 +221,7 @@ mod tests {
     // For any input JSON, the output should contain all original fields plus the analysis annotations.
 
     // Use shared test helpers from model module
-    use model::tests::{make_test_node, make_test_edge};
+    use model::tests::{make_test_edge, make_test_node};
 
     // Strategy for generating valid NodeData
     fn arb_node_data() -> impl Strategy<Value = NodeData> {
@@ -296,14 +302,16 @@ mod tests {
             )),
             prop::option::of(prop::string::string_regex("[A-Za-z<>:, ]+").unwrap()),
         )
-            .prop_map(|(id, source, target, edge_properties, semantic_tags, label)| Edge {
-                id,
-                source,
-                target,
-                edge_properties,
-                semantic_tags,
-                label,
-            })
+            .prop_map(
+                |(id, source, target, edge_properties, semantic_tags, label)| Edge {
+                    id,
+                    source,
+                    target,
+                    edge_properties,
+                    semantic_tags,
+                    label,
+                },
+            )
     }
 
     // Strategy for generating valid HydroIr
@@ -311,7 +319,9 @@ mod tests {
         (
             prop::collection::vec(arb_node(), 1..10),
             prop::collection::vec(arb_edge(), 0..15),
-            prop::option::of(Just(serde_json::json!([{"id": "location", "name": "Location"}]))),
+            prop::option::of(Just(
+                serde_json::json!([{"id": "location", "name": "Location"}]),
+            )),
             prop::option::of(Just(serde_json::json!({"location": {"0": "loc_0"}}))),
             prop::option::of(Just("location".to_string())),
             prop::option::of(Just(serde_json::json!({"default": "solid"}))),
@@ -606,41 +616,71 @@ mod tests {
         let json_str = json_result.unwrap();
 
         // Verify it's valid JSON by parsing it back
-        let parsed: serde_json::Value = serde_json::from_str(&json_str)
-            .expect("Serialized output should be valid JSON");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json_str).expect("Serialized output should be valid JSON");
 
         // Verify key fields are present in the JSON
-        assert!(parsed.get("nodes").is_some(), "JSON should have nodes field");
-        assert!(parsed.get("edges").is_some(), "JSON should have edges field");
-        assert!(parsed.get("overall").is_some(), "JSON should have overall field");
+        assert!(
+            parsed.get("nodes").is_some(),
+            "JSON should have nodes field"
+        );
+        assert!(
+            parsed.get("edges").is_some(),
+            "JSON should have edges field"
+        );
+        assert!(
+            parsed.get("overall").is_some(),
+            "JSON should have overall field"
+        );
 
         // Verify nodes array has correct length
-        let nodes_array = parsed["nodes"].as_array().expect("nodes should be an array");
+        let nodes_array = parsed["nodes"]
+            .as_array()
+            .expect("nodes should be an array");
         assert_eq!(nodes_array.len(), 3, "Should have 3 nodes");
 
         // Verify each node has analysis
         for node in nodes_array {
-            assert!(node.get("analysis").is_some(), "Each node should have analysis");
+            assert!(
+                node.get("analysis").is_some(),
+                "Each node should have analysis"
+            );
             assert!(node.get("id").is_some(), "Each node should have id");
-            assert!(node.get("nodeType").is_some(), "Each node should have nodeType");
+            assert!(
+                node.get("nodeType").is_some(),
+                "Each node should have nodeType"
+            );
         }
 
         // Verify edges array has correct length
-        let edges_array = parsed["edges"].as_array().expect("edges should be an array");
+        let edges_array = parsed["edges"]
+            .as_array()
+            .expect("edges should be an array");
         assert_eq!(edges_array.len(), 2, "Should have 2 edges");
 
         // Verify each edge has analysis
         for edge in edges_array {
-            assert!(edge.get("analysis").is_some(), "Each edge should have analysis");
+            assert!(
+                edge.get("analysis").is_some(),
+                "Each edge should have analysis"
+            );
             assert!(edge.get("id").is_some(), "Each edge should have id");
             assert!(edge.get("source").is_some(), "Each edge should have source");
             assert!(edge.get("target").is_some(), "Each edge should have target");
         }
 
         // Verify overall analysis
-        let overall = parsed["overall"].as_object().expect("overall should be an object");
-        assert!(overall.get("deterministic").is_some(), "overall should have deterministic");
-        assert!(overall.get("calm_safe").is_some(), "overall should have calm_safe");
+        let overall = parsed["overall"]
+            .as_object()
+            .expect("overall should be an object");
+        assert!(
+            overall.get("deterministic").is_some(),
+            "overall should have deterministic"
+        );
+        assert!(
+            overall.get("calm_safe").is_some(),
+            "overall should have calm_safe"
+        );
 
         // Verify optional fields are preserved
         // Note: serde uses snake_case by default, but we need to check what's actually in the JSON
@@ -668,7 +708,10 @@ mod tests {
         assert!(parsed.get("legend").is_some(), "JSON should have legend");
 
         // Verify the JSON is pretty-printed (contains newlines)
-        assert!(json_str.contains('\n'), "JSON should be pretty-printed with newlines");
+        assert!(
+            json_str.contains('\n'),
+            "JSON should be pretty-printed with newlines"
+        );
     }
 
     #[test]
@@ -700,8 +743,7 @@ mod tests {
         let results = run_analysis(&ir);
 
         // Serialize to JSON
-        let json_str = annotate_and_serialize(&ir, &results)
-            .expect("Serialization should succeed");
+        let json_str = annotate_and_serialize(&ir, &results).expect("Serialization should succeed");
 
         // Parse back to AnnotatedHydroIr
         let parsed: AnnotatedHydroIr = serde_json::from_str(&json_str)
@@ -722,8 +764,8 @@ mod tests {
         }
 
         // Serialize again and verify it's stable
-        let json_str2 = serde_json::to_string_pretty(&parsed)
-            .expect("Second serialization should succeed");
+        let json_str2 =
+            serde_json::to_string_pretty(&parsed).expect("Second serialization should succeed");
 
         assert_eq!(json_str, json_str2, "JSON serialization should be stable");
     }

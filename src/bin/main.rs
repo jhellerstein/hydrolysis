@@ -20,8 +20,8 @@ fn main() -> Result<()> {
         .with_context(|| format!("Failed to read input file: {}", input_path))?;
 
     // Parse Hydro IR
-    let ir: hydrolysis::model::HydroIr = serde_json::from_str(&input_json)
-        .with_context(|| "Failed to parse input JSON")?;
+    let ir: hydrolysis::model::HydroIr =
+        serde_json::from_str(&input_json).with_context(|| "Failed to parse input JSON")?;
 
     // Run analysis
     let results = hydrolysis::analysis::run_analysis(&ir);
