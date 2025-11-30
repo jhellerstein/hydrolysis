@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 1adb4104da760bf9bdcfe293fbb32ddc5b52e83572dc00bf8b5f44cdc4fbddb9 # shrinks to hydro_ir = HydroIr { nodes: [Node { id: "0", node_type: "Source", short_label: "a", full_label: None, label: None, data: None }], edges: [], hierarchy_choices: None, node_assignments: None, selected_hierarchy: None, edge_style_config: None, node_type_config: None, legend: None }

@@ -1,0 +1,128 @@
+# Implementation Plan
+
+- [x] 1. Set up project structure and dependencies
+  - Create `tools/hydrolysis/` crate directory structure
+  - Set up `Cargo.toml` with dependencies: `serde`, `serde_json`, `anyhow`, `proptest`
+  - Create module files: `main.rs`, `model.rs`, `semantics.rs`, `analysis.rs`, `annotate.rs`
+  - _Requirements: 8.1, 8.2_
+
+- [x] 2. Implement data model module (`model.rs`)
+  - [x] 2.1 Define input JSON structures
+    - Implement `HydroIr`, `Node`, `NodeData`, `Edge` structs with serde derives
+    - Handle all fields from hydro_lang::viz output including optional fields
+    - _Requirements: 1.2, 1.3_
+  - [x] 2.2 Write property test for JSON round-trip
+    - **Property 1: JSON Round-Trip Preservation**
+    - **Validates: Requirements 1.1, 1.2, 1.3, 1.5, 7.6**
+  - [x] 2.3 Define output/analysis structures
+    - Implement `NodeAnalysis`, `EdgeAnalysis`, `Issue`, `OverallAnalysis` structs
+    - Implement `AnnotatedNode`, `AnnotatedEdge`, `AnnotatedHydroIr` structs
+    - _Requirements: 7.2, 7.3, 7.4_
+
+- [x] 3. Implement semantics module (`semantics.rs`)
+  - [x] 3.1 Define semantic enums and structs
+    - Implement `NdEffect` enum (Deterministic, LocallyNonDet, ExternalNonDet)
+    - Implement `Monotonicity` enum (Always, Never, Depends)
+    - Implement `OpSemantics` struct
+    - _Requirements: 2.2, 2.3_
+  - [x] 3.2 Implement operator semantics lookup
+    - Implement `get_semantics(node_type: &str)` function with full operator table
+    - Implement `get_semantics_by_label(label: &str)` for finer-grained analysis
+    - _Requirements: 2.1, 2.4_
+  - [x] 3.3 Write property test for operator classification
+    - **Property 3: Operator Classification Completeness**
+    - **Validates: Requirements 2.1, 2.2, 2.3**
+  - [x] 3.4 Write property test for unknown type defaults
+    - **Property 4: Conservative Default for Unknown Types**
+    - **Validates: Requirements 2.5**
+  - [x] 3.5 Implement lattice type detection
+    - Implement `is_lattice_type(label: Option<&str>)` function
+    - Support patterns: CausalWrapper, VCWrapper, DomPair, SetUnion, MapUnion, Max, Min
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [x] 3.6 Write property test for lattice detection
+    - **Property 5: Lattice Detection Consistency**
+    - **Validates: Requirements 3.1, 3.2, 3.3**
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. Implement analysis module (`analysis.rs`)
+  - [x] 5.1 Implement graph building utilities
+    - Build adjacency lists (forward and backward) from nodes and edges
+    - Create node ID to index mappings
+    - _Requirements: 1.5_
+  - [x] 5.2 Implement ND taint propagation pass
+    - Identify seed nodes (NonDeterministic node type)
+    - Compute transitive closure over outgoing edges
+    - Return taint status for each node
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [x] 5.3 Write property test for ND taint transitivity
+    - **Property 6: ND Taint Propagation Transitivity**
+    - **Validates: Requirements 4.1, 4.2, 4.3**
+  - [x] 5.4 Write property test for deterministic nodes
+    - **Property 7: Deterministic Nodes Have No ND Ancestors**
+    - **Validates: Requirements 4.4**
+  - [x] 5.5 Implement CALM analysis pass
+    - Identify CALM-critical edges (Network tag or targeting Sink)
+    - Compute backward reachability for each critical edge
+    - Check monotonicity and lattice types along all paths
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [x] 5.6 Write property test for CALM safety
+    - **Property 8: CALM Safety Path Verification**
+    - **Validates: Requirements 5.2, 5.3**
+  - [x] 5.7 Write property test for CALM unsafe detection
+    - **Property 9: CALM Unsafe Detection**
+    - **Validates: Requirements 5.4**
+  - [x] 5.8 Implement overall analysis computation
+    - Compute overall.deterministic from ND results
+    - Compute overall.calm_safe from CALM results
+    - _Requirements: 5.5_
+  - [x] 5.9 Write property test for overall CALM consistency
+    - **Property 10: Overall CALM Consistency**
+    - **Validates: Requirements 5.5**
+  - [x] 5.10 Implement issue extraction
+    - Generate NonDet issues for tainted nodes
+    - Generate NonMonotone issues for non-monotone operators on CALM paths
+    - Generate NonLattice issues for non-lattice edges on CALM paths
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [x] 5.11 Write property test for issue annotation
+    - **Property 11: Issue Annotation Completeness**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+
+- [x] 6. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 7. Implement annotate module (`annotate.rs`)
+  - [x] 7.1 Implement annotation merging
+    - Clone original HydroIr structure
+    - Add NodeAnalysis to each node
+    - Add EdgeAnalysis to each edge
+    - Add OverallAnalysis to output
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - [x] 7.2 Write property test for output structure preservation
+    - **Property 12: Output Structure Preservation**
+    - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+  - [x] 7.3 Implement JSON serialization
+    - Serialize annotated structure to pretty-printed JSON
+    - Ensure all original fields are preserved
+    - _Requirements: 7.5, 7.6_
+
+- [x] 8. Implement CLI and main entry point (`main.rs`)
+  - [x] 8.1 Implement argument parsing
+    - Parse input file path (first argument)
+    - Parse output file path (second argument)
+    - Print usage on missing arguments
+    - _Requirements: 8.1, 8.2, 8.3_
+  - [x] 8.2 Implement main orchestration
+    - Read and parse input JSON
+    - Run analysis pipeline
+    - Write annotated output
+    - Handle errors with descriptive messages
+    - _Requirements: 1.1, 1.4, 7.5, 8.4, 8.5_
+  - [x] 8.3 Write property test for malformed JSON handling
+    - **Property 2: Malformed JSON Error Handling**
+    - **Validates: Requirements 1.4**
+
+- [x] 9. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+  

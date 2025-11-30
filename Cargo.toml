@@ -1,0 +1,16 @@
+[package]
+name = "hydrolysis"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "hydrolysis"
+path = "src/bin/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+proptest = "1.0"
