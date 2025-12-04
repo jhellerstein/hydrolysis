@@ -1631,8 +1631,8 @@
       "nodeType": "NonDeterministic",
       "semanticTags": [
         "NonDeterministic",
-        "NonDetRoot",
-        "NonMonotone"
+        "NonDetInherited",
+        "Monotone"
       ],
       "shortLabel": "observenondet",
       "fullLabel": "observenondet [hydro operator]",
@@ -1805,19 +1805,11 @@
       },
       "analysis": {
         "nd_effect": "LocallyNonDet",
-        "monotone": false,
+        "monotone": true,
         "issues": [
           {
             "kind": "NonDet",
             "message": "Node '106' is nondeterministic (LocallyNonDet)"
-          },
-          {
-            "kind": "NonMonotone",
-            "message": "Node '106' is non-monotone on CALM-critical path to edge 'e123'"
-          },
-          {
-            "kind": "NonMonotone",
-            "message": "Node '106' is non-monotone on CALM-critical path to edge 'e128'"
           }
         ],
         "source_location": {
@@ -6425,8 +6417,8 @@
       "nodeType": "NonDeterministic",
       "semanticTags": [
         "NonDeterministic",
-        "NonDetRoot",
-        "NonMonotone"
+        "Deterministic",
+        "Monotone"
       ],
       "shortLabel": "observenondet",
       "fullLabel": "observenondet [hydro operator]",
@@ -6598,22 +6590,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
-        "monotone": false,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '23' is nondeterministic (LocallyNonDet)"
-          },
-          {
-            "kind": "NonMonotone",
-            "message": "Node '23' is non-monotone on CALM-critical path to edge 'e123'"
-          },
-          {
-            "kind": "NonMonotone",
-            "message": "Node '23' is non-monotone on CALM-critical path to edge 'e128'"
-          }
-        ],
+        "nd_effect": "Deterministic",
+        "monotone": true,
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 335,
@@ -6626,7 +6605,7 @@
       "nodeType": "Aggregation",
       "semanticTags": [
         "Aggregation",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "fold",
@@ -6799,14 +6778,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '24' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 335,
@@ -6819,7 +6793,7 @@
       "nodeType": "Transform",
       "semanticTags": [
         "Transform",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "cast",
@@ -7000,14 +6974,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '25' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/convert/mod.rs",
           "line": 784,
@@ -7020,7 +6989,7 @@
       "nodeType": "Join",
       "semanticTags": [
         "Join",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "crosssingleton",
@@ -7185,14 +7154,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '26' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 346,
@@ -7205,7 +7169,7 @@
       "nodeType": "Transform",
       "semanticTags": [
         "Transform",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "map",
@@ -7370,14 +7334,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '27' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 347,
@@ -7390,7 +7349,7 @@
       "nodeType": "Transform",
       "semanticTags": [
         "Transform",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "filtermap",
@@ -7555,14 +7514,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '28' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 351,
@@ -7575,7 +7529,7 @@
       "nodeType": "Transform",
       "semanticTags": [
         "Transform",
-        "NonDetInherited",
+        "Deterministic",
         "Monotone"
       ],
       "shortLabel": "chain",
@@ -7740,14 +7694,9 @@
         ]
       },
       "analysis": {
-        "nd_effect": "LocallyNonDet",
+        "nd_effect": "Deterministic",
         "monotone": true,
-        "issues": [
-          {
-            "kind": "NonDet",
-            "message": "Node '29' is nondeterministic (LocallyNonDet)"
-          }
-        ],
+        "issues": [],
         "source_location": {
           "file": "src/kvs_core/mod.rs",
           "line": 392,

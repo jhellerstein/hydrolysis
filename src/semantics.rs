@@ -268,11 +268,28 @@ pub fn is_network_batch(backtrace: &serde_json::Value) -> bool {
     false
 }
 
+/// Check if a fold/reduce is actually a commutative+idempotent variant by inspecting backtrace
+fn is_commutative_idempotent_fold(backtrace: &serde_json::Value) -> bool {
+    if let Some(frames) = backtrace.as_array() {
+        for frame in frames {
+            if let Some(func) = frame.get("function").and_then(|f| f.as_str()) {
+                if func.contains("commutative_idempotent") || func.contains("idempotent_commutative")
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 /// Get semantics for a node, using label-based lookup with network batch detection
 ///
 /// This is the canonical way to determine node semantics, handling:
 /// - Label-based lookup for finer-grained classification
 /// - Special case for batch operators (network vs manual)
+/// - Special case for fold/reduce (check if commutative+idempotent via backtrace)
+/// - Special case for observenondet (check if inside commutative+idempotent fold)
 /// - Node type lookup when no label is present
 ///
 /// Panics if an unknown label is encountered (fail fast, don't hide bugs)
@@ -295,6 +312,46 @@ pub fn get_node_semantics(node: &crate::model::Node) -> OpSemantics {
             } else {
                 // Manual batch is semantic nondeterminism
                 get_semantics_by_label(label).expect("batch should be in label lookup table")
+            }
+        } else if matches!(
+            label.as_str(),
+            "fold" | "foldkeyed" | "fold_keyed" | "reduce" | "reducekeyed" | "reduce_keyed"
+        ) {
+            // Check if this is actually a commutative+idempotent variant
+            let is_ci = node
+                .data
+                .as_ref()
+                .map(|d| is_commutative_idempotent_fold(&d.backtrace))
+                .unwrap_or(false);
+
+            if is_ci {
+                // Commutative+idempotent folds are CALM-safe
+                OpSemantics {
+                    nd: NdEffect::Deterministic,
+                    monotone: Monotonicity::Always,
+                }
+            } else {
+                // Regular fold/reduce - depends on function
+                get_semantics_by_label(label).expect("fold/reduce should be in label lookup table")
+            }
+        } else if label == "observenondet" {
+            // Check if this observenondet is inside a commutative+idempotent fold
+            // If so, it's structural (batching implementation) not semantic nondeterminism
+            let is_ci_internal = node
+                .data
+                .as_ref()
+                .map(|d| is_commutative_idempotent_fold(&d.backtrace))
+                .unwrap_or(false);
+
+            if is_ci_internal {
+                // Internal batching in CALM-safe fold - treat as deterministic
+                OpSemantics {
+                    nd: NdEffect::Deterministic,
+                    monotone: Monotonicity::Always,
+                }
+            } else {
+                // Actual semantic nondeterminism
+                get_semantics_by_label(label).expect("observenondet should be in label lookup table")
             }
         } else {
             // Try label-based lookup first
