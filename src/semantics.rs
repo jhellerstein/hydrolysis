@@ -122,18 +122,25 @@ pub fn get_semantics_by_label(label: &str) -> Option<OpSemantics> {
         }),
 
         // === AGGREGATIONS (DEPENDS ON FUNCTION) ===
+        // Idempotent + commutative folds are CALM-safe (can handle reordering and duplication)
+        "fold_commutative_idempotent"
+        | "fold_idempotent_commutative"
+        | "reduce_commutative_idempotent"
+        | "reduce_idempotent_commutative" => Some(OpSemantics {
+            nd: NdEffect::Deterministic,
+            monotone: Monotonicity::Always,
+        }),
+
         // Fold/reduce/scan - monotonicity depends on the aggregation function
         "fold"
         | "fold_keyed"
         | "foldkeyed"
         | "fold_commutative"
-        | "fold_commutative_idempotent"
         | "fold_idempotent"
         | "reduce"
         | "reduce_keyed"
         | "reducekeyed"
         | "reduce_commutative"
-        | "reduce_commutative_idempotent"
         | "reduce_idempotent"
         | "reduce_keyed_watermark"
         | "scan" => Some(OpSemantics {
